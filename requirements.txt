@@ -1,0 +1,7 @@
+torch
+numpy
+pettingzoo
+rlcard
+stable-baselines3
+pygame
+tensorboard
