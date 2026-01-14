@@ -2,6 +2,7 @@ from pettingzoo.classic import texas_holdem_no_limit_v6
 import numpy as np
 import random
 
+
 def predict(env, agent):
     legal_moves = env.observe(agent)["action_mask"]
     legal_actions = [i for i, valid in enumerate(legal_moves) if valid]

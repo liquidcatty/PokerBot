@@ -4,6 +4,7 @@ import torch.nn.functional as F
 
 class DummyModel(nn.Module):
     def __init__(self, state_size, hidden_size, action_size):
+        super().__init__()
         self.fc_seq = nn.Linear(state_size, hidden_size)
         self.fc_out = nn.Linear(hidden_size, action_size)
 
