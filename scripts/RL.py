@@ -1,86 +1,59 @@
-import sys
-import os
-
-# Adds the parent directory (PokerBot) to the search path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-from models.model import DummyModel
-from pettingzoo.classic import texas_holdem_no_limit_v6
-
-import torch
-
-def predict(model, obs, legal_moves):
-    state = torch.tensor(obs["observation"], dtype=torch.float32)
-    probs = model(state)
-    
-    mask = torch.tensor(legal_moves, dtype=torch.float32)
-    masked_probs = probs * mask
-    masked_probs = masked_probs / masked_probs.sum(dim=-1, keepdim=True).clamp(min=1e-8)
-
-    dist = torch.distributions.Categorical(masked_probs)
-    action = dist.sample()
-    log_prob = dist.log_prob(action)
-
-    return action.item(), log_prob
+from pypokerengine.api.game import setup_config, start_poker
+import random
+from pypokerengine.players import BasePokerPlayer
 
 
-def run_one_unit_of_training(num_games=10):
-    env = texas_holdem_no_limit_v6.env()
-    env.reset()
-    
-    state_size = len(env.observe(env.possible_agents[0])["observation"])
-    action_size = len(env.observe(env.possible_agents[0])["action_mask"])
-    
-    model = DummyModel(state_size, 32, action_size)
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+class DummyAlgorithm(BasePokerPlayer):
+    """
+    Simple baseline poker agent:
+    - Never crashes
+    - Always returns a legal action
+    - Slightly prefers call over fold
+    """
 
-    for game in range(num_games):
-        print(f"Game: {game+1}/{num_games}")
-        env.reset()
-        log_probs = {agent: [] for agent in env.possible_agents}
-        rewards = {agent: [] for agent in env.possible_agents}
+    def declare_action(self, valid_actions, hole_card, round_state):
+        """
+        valid_actions example:
+        [
+            {'action': 'fold', 'amount': 0},
+            {'action': 'call', 'amount': 20},
+            {'action': 'raise', 'amount': {'min': 40, 'max': 200}}
+        ]
+        """
 
-        for agent in env.agent_iter():
-            obs, reward, termination, truncation, info = env.last()
-            rewards[agent].append(reward)
+        # Prefer non-fold actions if possible
+        call_action = next((a for a in valid_actions if a["action"] == "call"), None)
+        raise_action = next((a for a in valid_actions if a["action"] == "raise"), None)
 
-            if termination or truncation:
-                env.step(None)
-                continue
+        # Random but stable policy
+        r = random.random()
 
-            legal_moves = obs["action_mask"]
-            action, log_prob = predict(model, obs, legal_moves)
-            log_probs[agent].append(log_prob)
+        if raise_action and r > 0.85:
+            amount = random.randint(
+                raise_action["amount"]["min"],
+                raise_action["amount"]["max"]
+            )
+            return "raise", amount
 
-            env.step(action)
+        if call_action:
+            return "call", call_action["amount"]
 
-        for agent in env.possible_agents:
-            torch.autograd.set_detect_anomaly(True)
+        return "fold", 0
 
-            disc_rewards = []
-            R = 0
-            
-            for r in reversed(rewards[agent]):
-                R = r + R * 0.99
-                disc_rewards.insert(0, R)
-            
-            disc_rewards = torch.tensor(disc_rewards)
-            disc_rewards = ((disc_rewards - disc_rewards.mean())/(disc_rewards.std() + 0.000001)).detach()
+    # ---- Required callbacks (no-ops) ----
+    def receive_game_start_message(self, game_info): pass
+    def receive_round_start_message(self, round_count, hole_card, seats): pass
+    def receive_street_start_message(self, street, round_state): pass
+    def receive_game_update_message(self, action, round_state): pass
+    def receive_round_result_message(self, winners, hand_info, round_state): pass
 
-            loss = 0.0
-            for log_prob, G in zip(log_probs[agent], disc_rewards):
-                loss -= log_prob * G
+def run_poker_tournament(num_players=6, max_rounds=20):
+    config = setup_config(max_round=max_rounds,
+                          initial_stack=1000,
+                          small_blind_amount=10)
+    for i in range(num_players):
+        config.register_player(name=f"p{i}", algorithm=DummyAlgorithm())
 
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-    env.close()
-    print(rewards)
-    return rewards
-
-
-if __name__ == "__main__":
-    results = run_one_unit_of_training()
-    print("RESULTS:")
-    for agent, score in results.items():
-        print(agent, score)
+    game_result = start_poker(config=config,
+                              verbose=1)
+    return game_result

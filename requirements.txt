@@ -1,7 +1,6 @@
 torch
 numpy
-pettingzoo
-rlcard
+pypokerengine
 stable-baselines3
-pygame
 tensorboard
+pygame
