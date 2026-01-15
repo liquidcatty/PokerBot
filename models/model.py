@@ -8,9 +8,11 @@ class DummyModel(nn.Module):
         self.fc_seq = nn.Linear(state_size, hidden_size)
         self.fc_out = nn.Linear(hidden_size, action_size)
 
-    def forward(self, x):
-        x = x[:, -1, :]
+    def forward(self, x, legal_moves=None):
+        if x.dim() == 1:
+            x = x.unsqueeze(0)
+        
         x = F.relu(self.fc_seq(x))
         x = self.fc_out(x)
-        return F.softmax(x, dim=1)
+        return x
     

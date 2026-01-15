@@ -14,8 +14,8 @@ def predict(model, obs, legal_moves):
     probs = model(state)
     
     mask = torch.tensor(legal_moves, dtype=torch.float32)
-    masked_probs = mask * probs
-    masked_probs = masked_probs / masked_probs.sum()
+    masked_probs = probs * mask
+    masked_probs = masked_probs / masked_probs.sum(dim=-1, keepdim=True).clamp(min=1e-8)
 
     dist = torch.distributions.Categorical(masked_probs)
     action = dist.sample()
@@ -23,7 +23,8 @@ def predict(model, obs, legal_moves):
 
     return action.item(), log_prob
 
-def run_simulation(num_games=10):
+
+def run_one_unit_of_training(num_games=10):
     env = texas_holdem_no_limit_v6.env()
     env.reset()
     
@@ -54,6 +55,8 @@ def run_simulation(num_games=10):
             env.step(action)
 
         for agent in env.possible_agents:
+            torch.autograd.set_detect_anomaly(True)
+
             disc_rewards = []
             R = 0
             
@@ -62,7 +65,7 @@ def run_simulation(num_games=10):
                 disc_rewards.insert(0, R)
             
             disc_rewards = torch.tensor(disc_rewards)
-            disc_rewards = (disc_rewards - disc_rewards.mean())/(disc_rewards.std() + 0.000001)
+            disc_rewards = ((disc_rewards - disc_rewards.mean())/(disc_rewards.std() + 0.000001)).detach()
 
             loss = 0.0
             for log_prob, G in zip(log_probs[agent], disc_rewards):
@@ -72,12 +75,12 @@ def run_simulation(num_games=10):
             loss.backward()
             optimizer.step()
     env.close()
-
+    print(rewards)
     return rewards
 
 
 if __name__ == "__main__":
-    results = run_simulation()
+    results = run_one_unit_of_training()
     print("RESULTS:")
     for agent, score in results.items():
         print(agent, score)
