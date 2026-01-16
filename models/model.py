@@ -1,6 +1,13 @@
 import random
 from pypokerengine.players import BasePokerPlayer
 
+import os, sys
+
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.append(PROJECT_ROOT)
+
+from encoder import encoder
+from architecture import LSTM_model
 
 class DummyAlgorithm(BasePokerPlayer):
     def declare_action(self, valid_actions, hole_card, round_state):
