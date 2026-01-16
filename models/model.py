@@ -3,28 +3,10 @@ from pypokerengine.players import BasePokerPlayer
 
 
 class DummyAlgorithm(BasePokerPlayer):
-    """
-    Simple baseline poker agent:
-    - Never crashes
-    - Always returns a legal action
-    - Slightly prefers call over fold
-    """
-
     def declare_action(self, valid_actions, hole_card, round_state):
-        """
-        valid_actions example:
-        [
-            {'action': 'fold', 'amount': 0},
-            {'action': 'call', 'amount': 20},
-            {'action': 'raise', 'amount': {'min': 40, 'max': 200}}
-        ]
-        """
-
-        # Prefer non-fold actions if possible
         call_action = next((a for a in valid_actions if a["action"] == "call"), None)
         raise_action = next((a for a in valid_actions if a["action"] == "raise"), None)
 
-        # Random but stable policy
         r = random.random()
 
         if raise_action and r > 0.85:

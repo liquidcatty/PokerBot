@@ -1,53 +1,16 @@
 from pypokerengine.api.game import setup_config, start_poker
 import random
-from pypokerengine.players import BasePokerPlayer
+import sys
+import os
+
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.append(PROJECT_ROOT)
+
+from models.model import DummyAlgorithm
 
 
-class DummyAlgorithm(BasePokerPlayer):
-    """
-    Simple baseline poker agent:
-    - Never crashes
-    - Always returns a legal action
-    - Slightly prefers call over fold
-    """
 
-    def declare_action(self, valid_actions, hole_card, round_state):
-        """
-        valid_actions example:
-        [
-            {'action': 'fold', 'amount': 0},
-            {'action': 'call', 'amount': 20},
-            {'action': 'raise', 'amount': {'min': 40, 'max': 200}}
-        ]
-        """
-
-        # Prefer non-fold actions if possible
-        call_action = next((a for a in valid_actions if a["action"] == "call"), None)
-        raise_action = next((a for a in valid_actions if a["action"] == "raise"), None)
-
-        # Random but stable policy
-        r = random.random()
-
-        if raise_action and r > 0.85:
-            amount = random.randint(
-                raise_action["amount"]["min"],
-                raise_action["amount"]["max"]
-            )
-            return "raise", amount
-
-        if call_action:
-            return "call", call_action["amount"]
-
-        return "fold", 0
-
-    # ---- Required callbacks (no-ops) ----
-    def receive_game_start_message(self, game_info): pass
-    def receive_round_start_message(self, round_count, hole_card, seats): pass
-    def receive_street_start_message(self, street, round_state): pass
-    def receive_game_update_message(self, action, round_state): pass
-    def receive_round_result_message(self, winners, hand_info, round_state): pass
-
-def run_poker_tournament(num_players=6, max_rounds=20):
+def run_singular_poker_tournament(num_players=5, max_rounds=20):
     config = setup_config(max_round=max_rounds,
                           initial_stack=1000,
                           small_blind_amount=10)
@@ -55,5 +18,31 @@ def run_poker_tournament(num_players=6, max_rounds=20):
         config.register_player(name=f"p{i}", algorithm=DummyAlgorithm())
 
     game_result = start_poker(config=config,
-                              verbose=1)
+                              verbose=0)
     return game_result
+
+def run_one_set_of_games(num_players=5, num_games=10):
+    results=[]
+    for game in range(num_games):
+        game_results = []
+        
+        print(f"game: {game+1}/{num_games}")
+        max_rounds = random.randint(10, 30)
+        result = run_singular_poker_tournament(max_rounds=max_rounds)
+        
+        players_info = result['players']
+        for player_info in players_info:
+            game_results.append(player_info["stack"])
+
+        results.append(game_results)
+
+    return results
+        
+def training_epoch():
+    pass
+
+def training(num_epochs=10, num_players=5, num_games_per_epoch=10):
+    pass
+        
+
+print(run_one_set_of_games())
