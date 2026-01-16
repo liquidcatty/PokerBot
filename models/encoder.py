@@ -17,8 +17,7 @@ def encoder(game_history, hole_cards_by_action):
         shared_cards = round_info.get("community_card", [])
         cards_encoded = [encode_card(c) for c in shared_cards]
 
-        if len(cards_encoded) < 5:
-            cards_encoded += [-1] * (5-len(cards_encoded))
+        cards_encoded += [-1] * (5-len(cards_encoded))
 
         for action in round_info["actions"]:
             player_idx = action["player"]
