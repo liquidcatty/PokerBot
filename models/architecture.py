@@ -13,9 +13,9 @@ class Poker_LSTM(nn.Module):
         
         self.human_policy = nn.Linear(hidden_size, 6)
         self.alien_policy = nn.Linear(hidden_size, 6)
-        #0 call
-        #1 fold
-        #2 check
+        #0 fold
+        #1 check
+        #2 call
         #3 raise small
         #4 raise mid
         #5 raise big

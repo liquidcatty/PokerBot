@@ -8,9 +8,9 @@ sys.path.append(os.path.dirname(__file__))
 from encoder import encoder
 from architecture import Poker_LSTM
 
-lstm_out_map = {0: "call",
-                1: "fold",
-                2: "check",
+lstm_out_map = {0: "fold",
+                1: "check",
+                2: "call",
                 3: "raise small",
                 4: "raise mid",
                 5: "raise big",
@@ -20,11 +20,11 @@ def build_action_mask(valid_actions):
     mask = [0, 0, 0, 0, 0, 0]
 
     for a in valid_actions:
-        if a["action"] == "call":
+        if a["action"] == "fold":
             mask[0] = 1
-        elif a["action"] == "fold":
-            mask[1] = 1
         elif a["action"] == "check":
+            mask[1] = 1
+        elif a["action"] == "call":
             mask[2] = 1
         elif a["action"] == "raise":
             mask[3] = 1
