@@ -6,7 +6,7 @@ import os
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.append(PROJECT_ROOT)
 
-from models.model import DummyAlgorithm
+from models.model import WrapperForModel
 
 
 
@@ -15,7 +15,7 @@ def run_singular_poker_tournament(num_players=5, max_rounds=20):
                           initial_stack=1000,
                           small_blind_amount=10)
     for i in range(num_players):
-        config.register_player(name=f"p{i}", algorithm=DummyAlgorithm())
+        config.register_player(name=f"p{i}", algorithm=WrapperForModel())
 
     game_result = start_poker(config=config,
                               verbose=0)

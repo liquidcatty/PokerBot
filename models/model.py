@@ -59,8 +59,9 @@ class WrapperForModel(BasePokerPlayer):
 
     def declare_action(self, valid_actions, hole_card, round_state):
         self.hole_cards_by_action.append(hole_card)
-
+        print(self.game_history, self.hole_cards_by_action)
         encoded = encoder(self.game_history, self.hole_cards_by_action)
+        print(encoded)
         encoded = encoded.unsqueeze(0).to(self.device)
 
         with torch.no_grad():
@@ -100,8 +101,21 @@ class WrapperForModel(BasePokerPlayer):
         return "fold", 0
 
     # ---- Required callbacks (no-ops) ----
-    def receive_game_start_message(self, game_info): pass
-    def receive_round_start_message(self, round_count, hole_card, seats): pass
-    def receive_street_start_message(self, street, round_state): pass
-    def receive_game_update_message(self, action, round_state): pass
-    def receive_round_result_message(self, winners, hand_info, round_state): pass
+    def receive_game_start_message(self, game_info):
+        self.game_history = {"rounds": []}
+        self.hole_cards_by_action = []
+
+    def receive_round_start_message(self, round_count, hole_card, seats):
+        self.game_history["rounds"].append({
+            "community_card": [],
+            "actions": []
+        })
+
+    def receive_street_start_message(self, street, round_state):
+        self.game_history["rounds"][-1]["community_card"] = round_state["community_card"]
+
+    def receive_game_update_message(self, action, round_state):
+        self.game_history["rounds"][-1]["actions"].append(action)
+
+    def receive_round_result_message(self, winners, hand_info, round_state):
+        pass

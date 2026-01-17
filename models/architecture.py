@@ -6,7 +6,7 @@ import torch.nn.functional as F
 class Poker_LSTM(nn.Module):
     def __init__(self, hidden_size):
         super().__init__()
-        self.lstm = nn.LSTM(input=11,
+        self.lstm = nn.LSTM(input_size=11,
                             hidden_size=hidden_size,
                             num_layers=2, 
                             batch_first=True)
