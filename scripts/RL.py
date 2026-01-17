@@ -45,4 +45,4 @@ def training(num_epochs=10, num_players=5, num_games_per_epoch=10):
     pass
         
 
-print(run_one_set_of_games())
+print(run_singular_poker_tournament())
